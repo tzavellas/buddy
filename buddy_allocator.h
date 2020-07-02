@@ -3,7 +3,8 @@
 enum state_t
 {
     Free = 0,
-    Taken = 1
+    Taken,
+    Full
 };
 
 typedef struct node

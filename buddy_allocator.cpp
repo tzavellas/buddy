@@ -5,7 +5,7 @@
 
 size_t log2(size_t x)
 {
-	return ceil(log(x)/log(2));
+	return (size_t)ceil(log(x) / log(2));
 }
 
 void associate_buddies(node_ptr first, node_ptr second)
@@ -14,12 +14,12 @@ void associate_buddies(node_ptr first, node_ptr second)
 	second->buddy = first;
 }
 
-node_ptr get_free_node(node_ptr head)
+node_ptr get_nonfull_node(node_ptr head)
 {
 	node_ptr ret = NULL;
 	while (head)
 	{
-		if (head->state == Free)
+		if (Full != head->state)
 		{
 			ret = head;
 			break;
@@ -59,20 +59,20 @@ void pop(node_ptr* head)
 }
 
 
-node_ptr find_free(node_ptr head)
-{
-	node_ptr ret = head;
-
-	while (ret)
-	{
-		if (ret->state == Free)
-		{
-			break;
-		}
-		ret = ret->next;
-	}
-	return ret;
-}
+//node_ptr find_free(node_ptr head)
+//{
+//	node_ptr ret = head;
+//
+//	while (ret)
+//	{
+//		if (ret->state == Free)
+//		{
+//			break;
+//		}
+//		ret = ret->next;
+//	}
+//	return ret;
+//}
 
 node_ptr find_data(node_ptr head, void* data)
 {
@@ -93,21 +93,28 @@ node_ptr find_data(node_ptr head, void* data)
 	return ret;
 }
 
-void remove_node(node_ptr head, node_ptr n)
+void remove_node(node_ptr* head, node_ptr n)
 {
 	if (n)
 	{
-		node_ptr p = head;
-		while (p)
+		if (*head == n)
 		{
-			node_ptr temp = p->next;
-			if (temp == n)
+			pop(head);
+		}
+		else
+		{
+			node_ptr p = *head;
+			while (p)
 			{
-				p->next = temp->next;
-				free(temp);
-				break;
+				node_ptr temp = p->next;
+				if (temp == n)
+				{
+					p->next = temp->next;
+					free(temp);
+					break;
+				}
+				p = temp;
 			}
-			p = temp;
 		}
 	}
 }
@@ -130,7 +137,7 @@ buddy_allocator_t* buddy_allocator_create(void* raw_memory, size_t raw_memory_si
 		ret->memory_size = raw_memory_size;
 		ret->heads_size = log2(raw_memory_size);	// init linked list with pointers to memory blocks
 		ret->heads = (node_ptr*)malloc((ret->heads_size + 1) * sizeof(node_ptr*));
-		for (int i = 0; i <= ret->heads_size; i++)
+		for (size_t i = 0; i <= ret->heads_size; i++)
 		{
 			ret->heads[i] = NULL;
 		}
@@ -144,7 +151,7 @@ void buddy_allocator_destroy(buddy_allocator_t* buddy_allocator)
 {
 	if (buddy_allocator)
 	{
-		for (int i = 0; i <= buddy_allocator->heads_size; i++)
+		for (size_t i = 0; i <= buddy_allocator->heads_size; i++)
 		{
 			while (buddy_allocator->heads[i])	// Clear i-th linked list 
 			{
@@ -167,10 +174,10 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 		{
 			// not enought memory, nothing to do
 		}
-		else if (size > memory_size/2)
+		else if (size > memory_size / 2)
 		{
 			size_t top_level = log2(size);
-			node_ptr p = get_free_node(buddy_allocator->heads[top_level]);
+			node_ptr p = get_nonfull_node(buddy_allocator->heads[top_level]);
 			if (p)
 			{
 				p->state = Taken;	// allocate
@@ -189,10 +196,10 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 			{
 				memory_size >>= 1;
 				level = log2(memory_size);
-				p_level = get_free_node(buddy_allocator->heads[level]);
+				p_level = get_nonfull_node(buddy_allocator->heads[level]);
 				if (!p_level)	// if level has no available blocks
 				{
-					node_ptr parent = get_free_node(buddy_allocator->heads[level + 1]); // get a block from the previous level
+					node_ptr parent = get_nonfull_node(buddy_allocator->heads[level + 1]); // get a block from the previous level
 					if (!parent)	// if there are no available blocks
 					{
 						// not enough memory, nothing to do
@@ -207,7 +214,7 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 					node_ptr first = create_node(parent, first_block);		// create list nodes with common parent
 					node_ptr second = create_node(parent, second_block);
 					associate_buddies(first, second);						// associate them as buddies
-					
+
 					push(&buddy_allocator->heads[level], second);	// add the two new blocks in the current level
 					push(&buddy_allocator->heads[level], first);
 
@@ -216,8 +223,12 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 			}
 			if (p_level)
 			{
-				p_level->state = Taken;
+				p_level->state = Full;
 				ret = p_level->data;
+				if (Full == p_level->buddy->state)
+				{
+					p_level->parent->state = Full;
+				}
 			}
 		}
 	}
@@ -229,7 +240,7 @@ void buddy_allocator_free(buddy_allocator_t* buddy_allocator, void* ptr)
 	if (buddy_allocator && ptr)
 	{
 		node_ptr found = NULL;
-		int level = 0;
+		size_t level = 0;
 		while (level < buddy_allocator->heads_size)	// search all levels for memory block ptr
 		{
 			found = find_data(buddy_allocator->heads[level], ptr);	// if block exists in level
@@ -239,6 +250,8 @@ void buddy_allocator_free(buddy_allocator_t* buddy_allocator, void* ptr)
 				{
 					found->parent->state = Free;
 					ptr = found->parent->data;
+					remove_node(&buddy_allocator->heads[level], found->buddy);
+					remove_node(&buddy_allocator->heads[level], found);
 				}
 				else	// if buddy is not free, set this as free and break
 				{
