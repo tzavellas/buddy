@@ -71,6 +71,8 @@ void pop(node_ptr* head)
 	if (*head)
 	{
 		node_ptr next = (*head)->next;
+		(*head)->buddy = NULL;
+		(*head)->parent = NULL;
 		free(*head);
 		*head = next;
 	}
@@ -108,14 +110,16 @@ void remove_node(node_ptr* head, node_ptr n)
 			node_ptr p = *head;
 			while (p)
 			{
-				node_ptr temp = p->next;
-				if (temp == n)
+				//node_ptr temp = p->next;
+				//if (temp == n)
+				if (p->next == n)
 				{
-					p->next = temp->next;
-					free(temp);
+					//p->next = temp->next;
+					p->next = p->next->next;
+					free(p->next);
 					break;
 				}
-				p = temp;
+				p = p->next;
 			}
 		}
 	}
@@ -139,12 +143,15 @@ buddy_allocator_t* buddy_allocator_create(void* raw_memory, size_t raw_memory_si
 		ret->memory_size = raw_memory_size;
 		ret->heads_size = log2(raw_memory_size);	// init linked list with pointers to memory blocks
 		ret->heads = (node_ptr*)malloc((ret->heads_size + 1) * sizeof(node_ptr*));
-		for (size_t i = 0; i <= ret->heads_size; i++)
+		if (ret->heads)
 		{
-			ret->heads[i] = NULL;
+			for (size_t i = 0; i <= ret->heads_size; i++)
+			{
+				ret->heads[i] = NULL;
+			}
+			node_ptr n = create_node(NULL, raw_memory);
+			push(&ret->heads[ret->heads_size], n);	// add raw memory block to last position
 		}
-		node_ptr n = create_node(NULL, raw_memory);
-		push(&ret->heads[ret->heads_size], n);	// add raw memory block to last position
 	}
 	return ret;
 }

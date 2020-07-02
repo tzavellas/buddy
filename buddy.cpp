@@ -18,23 +18,26 @@ int main()
 		/*int count = rand() % 20 + 1;*/
 		size_t s[] = { 544, 135,430,915,648,430,604,861,745,395,775,730,311,144,870,949,514,97,156,83 };
 		void** p = (void**)malloc(20);
-		int j = 0;
-		for (int i = 0; i < 20; i++)
+		if (p)
 		{
-			/*int s = rand() % 1024 + 32;*/
-			p[j] = buddy_allocator_alloc(buddy, s[i]);
-			printf("%d Requested %d - allocated %d\n", i, s[i], (p[j]!=NULL));
-			if (p[j])
+			int j = 0;
+			for (int i = 0; i < 20; i++)
 			{
-				j++;
+				/*int s = rand() % 1024 + 32;*/
+				p[j] = buddy_allocator_alloc(buddy, s[i]);
+				printf("%d Requested %d - allocated %d\n", i, s[i], (p[j] != NULL));
+				if (p[j])
+				{
+					j++;
+				}
+			}
+
+			for (int i = j - 1; i > -1; i--)
+			{
+				buddy_allocator_free(buddy, p[i]);
+				p[i] = NULL;
 			}
 		}
-
-		for (int i = j - 1; i > -1; i--)
-		{
-			buddy_allocator_free(buddy, p[i]);
-		}
-
 		free(p);
 
 		/*void* p1 = buddy_allocator_alloc(buddy, 128);
