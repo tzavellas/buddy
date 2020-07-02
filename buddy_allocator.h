@@ -1,24 +1,27 @@
 #pragma once
 
+enum state_t
+{
+    Free = 0,
+    Taken = 1
+};
+
 typedef struct node
 {
     void* data;
     struct node* next;
+    struct node* buddy;
+    state_t state;
 }node_t;
 
 typedef node_t* node_ptr;
-
-void push(node_ptr* head, void* data);
-
-void* pop(node_ptr* head);
-
-void split(void* data, size_t size, void** first, void** second);
 
 typedef struct buddy_allocator
 {
     size_t memory_size;
     void* ptr;
     node_ptr* heads;
+    size_t heads_size;
 }buddy_allocator_t;
 
 buddy_allocator_t* buddy_allocator_create(void* raw_memory, size_t raw_memory_size);
