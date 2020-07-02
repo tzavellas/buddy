@@ -29,13 +29,14 @@ node_ptr get_free_node(node_ptr head)
 	return ret;
 }
 
-node_ptr create_node(void* data)
+node_ptr create_node(node_ptr parent, void* data)
 {
 	node_ptr ret = (node_ptr)malloc(sizeof(node_t));
 	if (ret)
 	{
 		ret->buddy = NULL;
 		ret->data = data;
+		ret->parent = parent;
 		ret->state = Free;
 	}
 	return ret;
@@ -46,13 +47,6 @@ void push(node_ptr* head, node_ptr n)
 	n->next = *head;
 	*head = n;
 }
-
-//void push(node_ptr* head, void* data)
-//{
-//	node_ptr nd = create_node(data);
-//	nd->next = *head;
-//	*head = nd;
-//}
 
 void pop(node_ptr* head)
 {
@@ -140,7 +134,7 @@ buddy_allocator_t* buddy_allocator_create(void* raw_memory, size_t raw_memory_si
 		{
 			ret->heads[i] = NULL;
 		}
-		node_ptr n = create_node(raw_memory);
+		node_ptr n = create_node(NULL, raw_memory);
 		push(&ret->heads[ret->heads_size], n);	// add raw memory block to last position
 	}
 	return ret;
@@ -198,21 +192,21 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 				p_level = get_free_node(buddy_allocator->heads[level]);
 				if (!p_level)	// if level has no available blocks
 				{
-					node_ptr p_prev_level = get_free_node(buddy_allocator->heads[level + 1]); // get a block from the previous level
-					if (!p_prev_level)	// if there are no available blocks
+					node_ptr parent = get_free_node(buddy_allocator->heads[level + 1]); // get a block from the previous level
+					if (!parent)	// if there are no available blocks
 					{
 						// not enough memory, nothing to do
 						break;
 					}
 					void* first_block = NULL;
 					void* second_block = NULL;
-					p_prev_level->state = Taken;		// mark block as Taken
+					parent->state = Taken;		// mark block as Taken
 
-					split(p_prev_level->data, memory_size, &first_block, &second_block);	// split the block
+					split(parent->data, memory_size, &first_block, &second_block);	// split the block
 
-					node_ptr first = create_node(first_block);		// create list nodes and associate them as buddies
-					node_ptr second = create_node(second_block);
-					associate_buddies(first, second);
+					node_ptr first = create_node(parent, first_block);		// create list nodes with common parent
+					node_ptr second = create_node(parent, second_block);
+					associate_buddies(first, second);						// associate them as buddies
 					
 					push(&buddy_allocator->heads[level], second);	// add the two new blocks in the current level
 					push(&buddy_allocator->heads[level], first);
@@ -236,15 +230,15 @@ void buddy_allocator_free(buddy_allocator_t* buddy_allocator, void* ptr)
 	{
 		node_ptr found = NULL;
 		int level = 0;
-		while (level< buddy_allocator->heads_size)	// search all levels for memory block ptr
+		while (level < buddy_allocator->heads_size)	// search all levels for memory block ptr
 		{
 			found = find_data(buddy_allocator->heads[level], ptr);	// if block exists in level
 			if (found)
 			{
 				if (Free == found->buddy->state)	// Check if his buddy is free
 				{
-					remove_node(buddy_allocator->heads[level], found->buddy);	// release both
-					remove_node(buddy_allocator->heads[level], found);
+					found->parent->state = Free;
+					ptr = found->parent->data;
 				}
 				else	// if buddy is not free, set this as free and break
 				{

@@ -11,6 +11,7 @@ typedef struct node
     void* data;
     struct node* next;
     struct node* buddy;
+    struct node* parent;
     state_t state;
 }node_t;
 
