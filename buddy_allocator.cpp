@@ -1,7 +1,8 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "buddy_allocator.h"
+
+
 
 size_t log2(size_t x)
 {
@@ -12,6 +13,21 @@ void associate_buddies(node_ptr first, node_ptr second)
 {
 	first->buddy = second;
 	second->buddy = first;
+}
+
+node_ptr get_free_node(node_ptr head)
+{
+	node_ptr ret = NULL;
+	while (head)
+	{
+		if (Free == head->state)
+		{
+			ret = head;
+			break;
+		}
+		head = head->next;
+	}
+	return ret;
 }
 
 node_ptr get_nonfull_node(node_ptr head)
@@ -28,6 +44,8 @@ node_ptr get_nonfull_node(node_ptr head)
 	}
 	return ret;
 }
+
+typedef node_ptr(*get_node_func)(node_ptr);
 
 node_ptr create_node(node_ptr parent, void* data)
 {
@@ -50,29 +68,13 @@ void push(node_ptr* head, node_ptr n)
 
 void pop(node_ptr* head)
 {
-	if (head)
+	if (*head)
 	{
 		node_ptr next = (*head)->next;
 		free(*head);
 		*head = next;
 	}
 }
-
-
-//node_ptr find_free(node_ptr head)
-//{
-//	node_ptr ret = head;
-//
-//	while (ret)
-//	{
-//		if (ret->state == Free)
-//		{
-//			break;
-//		}
-//		ret = ret->next;
-//	}
-//	return ret;
-//}
 
 node_ptr find_data(node_ptr head, void* data)
 {
@@ -180,7 +182,7 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 			node_ptr p = get_nonfull_node(buddy_allocator->heads[top_level]);
 			if (p)
 			{
-				p->state = Taken;	// allocate
+				p->state = Full;	// allocate
 				ret = p->data;
 			}
 			else
@@ -190,16 +192,26 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 		}
 		else
 		{
+			get_node_func get_node;
+
+			size_t level_size = log2(size);
 			size_t level = 0;
 			node_ptr p_level = NULL;
-			while (size <= memory_size / 2)
+			while (level_size < log2(memory_size))
 			{
 				memory_size >>= 1;
 				level = log2(memory_size);
-				p_level = get_nonfull_node(buddy_allocator->heads[level]);
+
+				if (level_size == level)
+					get_node = &get_free_node;
+				else
+					get_node = &get_nonfull_node;
+
+				p_level = get_node(buddy_allocator->heads[level]);
+
 				if (!p_level)	// if level has no available blocks
 				{
-					node_ptr parent = get_nonfull_node(buddy_allocator->heads[level + 1]); // get a block from the previous level
+					node_ptr parent = get_node(buddy_allocator->heads[level + 1]); // get a block from the previous level
 					if (!parent)	// if there are no available blocks
 					{
 						// not enough memory, nothing to do
@@ -253,9 +265,10 @@ void buddy_allocator_free(buddy_allocator_t* buddy_allocator, void* ptr)
 					remove_node(&buddy_allocator->heads[level], found->buddy);
 					remove_node(&buddy_allocator->heads[level], found);
 				}
-				else	// if buddy is not free, set this as free and break
+				else	// if buddy is not free, set this as Free, parent as Taken and break
 				{
 					found->state = Free;
+					found->parent->state = Taken;
 					break;
 				}
 			}
