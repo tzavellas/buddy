@@ -18,5 +18,13 @@
     <ClCompile Include="buddy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="buddy_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="buddy_allocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

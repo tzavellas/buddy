@@ -140,6 +140,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="buddy.cpp" />
+    <ClCompile Include="buddy_allocator.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="buddy_allocator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
