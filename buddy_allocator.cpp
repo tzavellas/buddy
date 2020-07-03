@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "buddy_allocator.h"
 
-static void* request_block(treenode_ptr leaf, size_t size, size_t memory_size)
+static void* request_block(leaf_ptr leaf, size_t size, size_t memory_size)
 {
 	void* ret = NULL;
 	
@@ -12,9 +12,9 @@ static void* request_block(treenode_ptr leaf, size_t size, size_t memory_size)
 		memory_size >>= 1;
 		level = log2(memory_size);
 
-		if (Available == leaf->state)
+		if (Available == leaf->state)	// if leaf is availabe for allocaton
 		{
-			if (split(&leaf, leaf->data, memory_size))
+			if (split(&leaf, leaf->data, memory_size))	// split the leaf
 			{
 				leaf->state = Allocated;
 				leaf = leaf->left;
@@ -25,18 +25,18 @@ static void* request_block(treenode_ptr leaf, size_t size, size_t memory_size)
 				break;
 			}
 		}
-		else if (Allocated == leaf->state)
+		else if (Allocated == leaf->state)	// if the leaf is already allocated
 		{
 			state_t left_state = leaf->left->state;
-			if (Full == left_state)
+			if (Full == left_state)	// Check if left child leaf is full
 			{
 				leaf = leaf->right;
 			}
-			else if ((Allocated == left_state) && (level == levelsize))
+			else if ((Allocated == left_state) && (level == levelsize))	// Check if left child leaf is allocated and it's the target level
 			{
 				leaf = leaf->right;
 			}
-			else
+			else	// otherwise choose left child leaf
 			{
 				leaf = leaf->left;
 			}
@@ -74,7 +74,7 @@ void buddy_allocator_destroy(buddy_allocator_t* buddy_allocator)
 {
 	if (buddy_allocator)
 	{
-		destroy_tree(buddy_allocator->root);
+		destroy_tree(buddy_allocator->root);	// recursively destroys the tree postorder
 		free(buddy_allocator);			// release buddy allocator
 	}
 }
@@ -84,7 +84,7 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 	void* ret = NULL;
 	if (buddy_allocator)
 	{
-		treenode_ptr root = buddy_allocator->root;
+		leaf_ptr root = buddy_allocator->root;
 		size_t memory_size = root->block_size;
 		if (Full != root->state)
 		{
@@ -107,7 +107,7 @@ void* buddy_allocator_alloc(buddy_allocator_t* buddy_allocator, size_t size)
 			else
 			{
 				ret = request_block(root, size, memory_size);
-				update_leaf(&root);
+				update_leaf(&root);	// need to update the tree if request was successful
 			}
 		}
 	}
@@ -118,12 +118,12 @@ void buddy_allocator_free(buddy_allocator_t* buddy_allocator, void* ptr)
 {
 	if (buddy_allocator && ptr)
 	{
-		treenode_ptr root = buddy_allocator->root;
-		treenode_ptr found = search(root, ptr);
+		leaf_ptr root = buddy_allocator->root;
+		leaf_ptr found = search(root, ptr);
 		if (found)
 		{
 			found->state = Available;
-			update_leaf(&root);
+			update_leaf(&root);	// need to update the tree since a leaf's state has changed 
 		}
 	}
 }

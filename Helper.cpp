@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include "Helper.h"
 
-treenode_ptr create_leaf(void* data, size_t block_size)
+
+leaf_ptr create_leaf(void* data, size_t block_size)
 {
-	treenode_ptr ret = (treenode_ptr)malloc(sizeof(treenode_t));
+	leaf_ptr ret = (leaf_ptr)malloc(sizeof(leaf_t));
 	if (ret)
 	{
 		ret->data = data;
@@ -16,7 +17,8 @@ treenode_ptr create_leaf(void* data, size_t block_size)
 	return ret;
 }
 
-void destroy_tree(treenode_ptr leaf)
+
+void destroy_tree(leaf_ptr leaf)
 {
 	if (leaf)
 	{
@@ -26,14 +28,16 @@ void destroy_tree(treenode_ptr leaf)
 	}
 }
 
+
 size_t log2(size_t x)
 {
 	return (size_t)ceil(log(x) / log(2));
 }
 
-treenode_ptr search(treenode_ptr leaf, void* data)
+
+leaf_ptr search(leaf_ptr leaf, void* data)
 {
-	treenode_ptr ret = NULL;
+	leaf_ptr ret = NULL;
 	if (leaf)
 	{
 		if ((Full == leaf->state) && (data == leaf->data))
@@ -50,12 +54,13 @@ treenode_ptr search(treenode_ptr leaf, void* data)
 	return ret;
 }
 
-int split(treenode_ptr* leaf, void* data, size_t block_size)
+
+int split(leaf_ptr* leaf, void* data, size_t block_size)
 {
 	int ret = 0;
 	if (*leaf)
 	{
-		treenode_ptr left, right;
+		leaf_ptr left, right;
 
 		left = create_leaf(data, block_size);
 		right = create_leaf((void*)((char*)data + block_size), block_size);
@@ -70,7 +75,8 @@ int split(treenode_ptr* leaf, void* data, size_t block_size)
 	return ret;
 }
 
-state_t update_leaf(treenode_ptr* leaf)
+
+state_t update_leaf(leaf_ptr* leaf)
 {
 	state_t ret = Available;
 	if (*leaf)
@@ -111,7 +117,8 @@ state_t update_leaf(treenode_ptr* leaf)
 	return ret;
 }
 
-size_t count_allocated(treenode_ptr leaf)
+
+size_t count_allocated(leaf_ptr leaf)
 {
 	size_t ret = 0;
 	if (leaf)

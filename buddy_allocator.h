@@ -3,7 +3,7 @@
 
 typedef struct buddy_allocator
 {
-    treenode_ptr root;
+    leaf_ptr root;
 }buddy_allocator_t;
 
 buddy_allocator_t* buddy_allocator_create(void* raw_memory, size_t raw_memory_size);
