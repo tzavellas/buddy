@@ -139,9 +139,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="buddy.cpp" />
-    <ClCompile Include="buddy_allocator.cpp" />
-    <ClCompile Include="Helper.cpp" />
+    <ClCompile Include="buddy.c" />
+    <ClCompile Include="buddy_allocator.c" />
+    <ClCompile Include="Helper.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="buddy_allocator.h" />

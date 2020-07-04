@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="buddy.cpp">
+    <ClCompile Include="Helper.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="buddy_allocator.cpp">
+    <ClCompile Include="buddy_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Helper.cpp">
+    <ClCompile Include="buddy.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

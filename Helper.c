@@ -29,7 +29,7 @@ void destroy_tree(leaf_ptr leaf)
 }
 
 
-size_t log2(size_t x)
+size_t log2int(size_t x)
 {
 	return (size_t)ceil(log(x) / log(2));
 }

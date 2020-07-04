@@ -1,10 +1,13 @@
 #pragma once
-enum state_t
+/// <summary>
+/// Enum used to mark binary search tree leaves
+/// </summary>
+typedef enum
 {
     Available = 0,
     Allocated,
     Full
-};
+}state_t;
 
 /// <summary>
 /// Binary search tree leaf struct
@@ -41,7 +44,7 @@ void destroy_tree(leaf_ptr leaf);
 /// </summary>
 /// <param name="x"> The integer </param>
 /// <returns> the rounded-up log base 2 of the input </returns>
-size_t log2(size_t x);
+size_t log2int(size_t x);
 
 /// <summary>
 /// Searches the binary sub-tree for a leaf that contains the data and its state is Full
